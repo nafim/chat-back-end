@@ -1,0 +1,30 @@
+{
+  "name": "chat-back-end",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nafim/chat-back-end.git"
+  },
+  "author": "Nafim",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nafim/chat-back-end/issues"
+  },
+  "homepage": "https://github.com/nafim/chat-back-end#readme",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "prompt": "^1.1.0",
+    "readline-sync": "^1.4.10",
+    "redis": "^3.0.2",
+    "socket.io": "^3.0.5",
+    "socket.io-client": "^3.0.5",
+    "socket.io-redis": "^6.0.1"
+  }
+}
