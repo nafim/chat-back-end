@@ -19,14 +19,11 @@ redisClient.on('connect', () => {
     global.console.log("connected");
 });
 
-redisClient.set("rooms", JSON.stringify(['room1', 'room2', 'room3']));         
-redisClient.get("rooms", function (err, reply) {
-        global.console.log(reply.toString())
-})
+// redisClient.del('#general_history', function(err, reply) {
+//     console.log(reply);
+// });
 
-redisClient.sismember('tags', "one", function(err, reply) {
-    console.log(reply);
-});
+
 
 
 const port = 4000;
@@ -36,8 +33,13 @@ const server = app.listen(port, () => {
 });
 
 // set up socket io connection
-const io = require('socket.io')(server);
+const io = require('socket.io')(server, {
+    cors: {
+        origin: "*",
+    },
+});
 
+// const rooms = {}
 
 // functions regarding users
 function addUser({username, room}) {
@@ -50,7 +52,7 @@ function addUser({username, room}) {
         }
         // add user to list of users for this room
         redisClient.sadd([room_key, username], function(err, reply) {
-            console.log("added username to set")
+            console.log(`added ${username} to set`)
         });
         // // mapping between this socketid and username/room
         // redisClient.hmset(socket_id, {
@@ -92,23 +94,54 @@ function createMessage(username, text) {
 
 io.on("connection", (socket) => {
     const { username, room } = socket.handshake.query;
+    console.log(`${username} has connected`);
     addUser({ username, room })
     socket.join(room);
+    socket.to(room).emit("Alert", `${username} has joined`);
 
-    io.to(room).emit("roomData", {
-        room: room,
-        users: usersInRoom(room)
+    // get the history of the room once socket has joined
+    redisClient.lrange(`${room}_history`, 0, -1, function(err, history) {
+        if (err) {
+            console.error(error);
+        }
+        // parse json
+        parsedHistory = history.map((data) => JSON.parse(data))
+        io.to(socket.id).emit("history", {history: parsedHistory});
+        console.log(parsedHistory);
     })
 
+    emitRoomData(room);
+
     socket.on("sendMessage", (message_txt) => {
-            io.to(room).emit("Message", createMessage(username, message_txt));
+            const new_message = createMessage(username, message_txt);
+            socket.to(room).emit("Message", new_message);
+
+            // add the message to the history of the room
+            const room_history = `${room}_history`;
+            redisClient.rpush(room_history, JSON.stringify(new_message), function(err, numMsgs) {
+                if (numMsgs > process.env.NUM_MESSAGES_FETCHED) {
+                    redisClient.lpop(room_history)
+                }
+            })
     })
 
     socket.on("disconnect", () => {
-        removeUser(socket.id);
-        io.to(room).emit("roomData", {
-            room: room,
-            users: usersInRoom(room)
-        })
+        console.log(`${username} has disconnected`)
+        emitRoomData(room);
     })
 })
+
+function emitRoomData(roomName) {
+    if (!roomName) throw Error(`Invalid room name: ${roomName}`)
+
+    const room = io.sockets.adapter.rooms.get(roomName);
+    if (!room) return;
+    
+    var numUsers = room.size;
+    if (numUsers === undefined) throw Error('numUsers not defined.')
+    console.log('numUsers', numUsers);
+    io.to(roomName).emit("roomData", {
+        roomName,
+        numUsers
+    })
+}

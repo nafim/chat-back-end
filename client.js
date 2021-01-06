@@ -21,10 +21,9 @@ function sendMessage() {
 
 
 socket.on('connect', function(){
+    
     sendMessage();
 });
-
-
 
 socket.on('Message', function(data){
     console.log('Received: ' + data.text);
