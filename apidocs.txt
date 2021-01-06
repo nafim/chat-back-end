@@ -1,0 +1,8 @@
+GET: /api/getRoom
+    Parameters:
+        room: room name
+    Response:
+        array of objects with fields:
+            user,
+            message,
+            timestamp

@@ -1,86 +1,47 @@
 const express = require('express');
 const app = express();
 require('dotenv').config();
-app.use("/api", require('./api'));
-
-// import redis
-const redis = require('redis');
-redisClient = redis.createClient({
-    port: process.env.REDIS_PORT,
-    host: process.env.REDIS_ENDPOINT,
-    auth_pass: process.env.REDIS_PASSWORD
-});
-const redisAdapter = require('socket.io-redis');
-redisAdapter({ host: process.env.REDIS_ENDPOINT, port: process.env.REDIS_PORT });
-
-redisClient.on('connect', () => {   
-    global.console.log("connected");
-});
-
-redisClient.set("rooms", JSON.stringify(['room1', 'room2', 'room3']));         
-redisClient.get("rooms", function (err, reply) {
-        global.console.log(reply.toString())
-})
-
-redisClient.sismember('tags', "one", function(err, reply) {
-    console.log(reply);
-});
-
+app.use(require('./api'));
 
 const port = 4000;
+
+app.get("/", function (req, res) {
+    res.sendFile(__dirname + "/index.html");
+  });
 
 const server = app.listen(port, () => {
     console.log(`chat server listening at http://localhost:${port}`);
 });
 
-// set up socket io connection
-const io = require('socket.io')(server);
+rooms = {
+    room1: {
+        users: []
+    },
+    room2: {
+        users: []
+    },
+    room3: {
+        users: []
+    }
+}
 
+sockets = [
+]
 
 // functions regarding users
 function addUser ({id, username, room}) {
-    const room_key = `${room}_users`;
-    const socket_id = `${id}_socketid`;
-
-    // check if username is already in the room
-    redisClient.sismember(room_key, function(err, isMember) {
-        if (isMember) {
-            return console.error("already member");
-        }
-        // add user to list of users for this room
-        redisClient.sadd([room_key, username], function(err, reply) {
-            console.log("added username to set")
-        });
-        // mapping between this socketid and username/room
-        redisClient.hmset(socket_id, {
-            'username': username,
-            'room': room
-        });
-        
-    });
+    rooms[room].users.push({id, username});
+    sockets.push({id, username, room});
 }
 
 function idToUsernameAndRoom (id) {
-    const socket_id = `${id}_socketid`;
-    redisClient.hgetall(socket_id, function(err, userData) {
-        return userData;
-    });
+    socketData = sockets.find((socket) => {
+        return socket.id === id
+    })
+    return {username: socketData.username, room: socketData.room};
 }
 
 function removeUser(id) {
-    const socket_id = `${id}_socketid`;
-    redisClient.hgetall(socket_id, function(err, userData) {
-        const room = userData.room;
-        const username = userData.username;
-        // remove user from room's set of users
-        redisClient.srem(`${room}_users`, username);
-
-        // remove the socket_id
-        redisClient.del(socket_id, function(err, reply) {
-            console.log(reply);
-        });
-    });
-
     const userData = idToUsernameAndRoom(id);
     const room = userData.room;
     const username = userData.username;
@@ -90,10 +51,7 @@ function removeUser(id) {
 }
 
 function usersInRoom(room) {
-    const room_key = `${room}_users`;
-    redisClient.smembers(room_key, function(err, users) {
-        return users;
-    });
+    return rooms[room].users;
 }
 
 // functions regarding messages
@@ -104,6 +62,9 @@ function createMessage(username, text) {
         timeStamp: new Date().getTime()
     }
 }
+
+// set up socket io connection
+const io = require('socket.io')(server);
 
 io.on("connection", (socket) => {
     socket.on("join", (data) => {
