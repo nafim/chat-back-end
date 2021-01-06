@@ -1,4 +1,4 @@
-var socket = require('socket.io-client')('http://localhost:4000');
+var socket = require('socket.io-client')('http://localhost:4000?username=a&room=room1');
 var username = 'a1';
 var room = "room1" ;
 var message = "hi";
@@ -12,7 +12,7 @@ const readline = require('readline').createInterface({
 
 function sendMessage() {
     if (socket.connected) {
-        readline.question('', (result) => {
+        readline.question('>', (result) => {
             socket.emit('sendMessage', result);
             setTimeout(sendMessage, 500);
         });
@@ -21,13 +21,6 @@ function sendMessage() {
 
 
 socket.on('connect', function(){
-    // username = prompt.get(['username'], (err, result) => {
-    //     consol
-    // });
-    socket.emit('join', {
-        username: 'a',
-        room: "room1"
-    });
     sendMessage();
 });
 

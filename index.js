@@ -1,57 +1,84 @@
 const express = require('express');
 const app = express();
+const cors = require('cors');
+app.use(cors());
 require('dotenv').config();
-app.use(require('./api'));
+app.use("/api", require('./api'));
+
+// import redis
+const redis = require('redis');
+redisClient = redis.createClient({
+    port: process.env.REDIS_PORT,
+    host: process.env.REDIS_ENDPOINT,
+    auth_pass: process.env.REDIS_PASSWORD
+});
+const redisAdapter = require('socket.io-redis');
+redisAdapter({ host: process.env.REDIS_ENDPOINT, port: process.env.REDIS_PORT });
+
+redisClient.on('connect', () => {   
+    global.console.log("connected");
+});
+
+redisClient.set("rooms", JSON.stringify(['room1', 'room2', 'room3']));         
+redisClient.get("rooms", function (err, reply) {
+        global.console.log(reply.toString())
+})
+
+redisClient.sismember('tags', "one", function(err, reply) {
+    console.log(reply);
+});
+
 
 const port = 4000;
-
-app.get("/", function (req, res) {
-    res.sendFile(__dirname + "/index.html");
-  });
 
 const server = app.listen(port, () => {
     console.log(`chat server listening at http://localhost:${port}`);
 });
 
-rooms = {
-    room1: {
-        users: []
-    },
-    room2: {
-        users: []
-    },
-    room3: {
-        users: []
-    }
-}
+// set up socket io connection
+const io = require('socket.io')(server);
 
-sockets = [
-]
 
 // functions regarding users
-function addUser ({id, username, room}) {
-    rooms[room].users.push({id, username});
-    sockets.push({id, username, room});
+function addUser({username, room}) {
+    const room_key = `${room}_users`;
+
+    // check if username is already in the room
+    redisClient.sismember(room_key, function(err, isMember) {
+        if (isMember) {
+            return console.error("already member");
+        }
+        // add user to list of users for this room
+        redisClient.sadd([room_key, username], function(err, reply) {
+            console.log("added username to set")
+        });
+        // // mapping between this socketid and username/room
+        // redisClient.hmset(socket_id, {
+        //     'username': username,
+        //     'room': room
+        // });
+        
+    });
 }
 
-function idToUsernameAndRoom (id) {
-    socketData = sockets.find((socket) => {
-        return socket.id === id
-    })
-    return {username: socketData.username, room: socketData.room};
-}
+// function idToUsernameAndRoom (id) {
+//     const socket_id = `${id}_socketid`;
+//     redisClient.hgetall(socket_id, function(err, userData) {
+//         return userData;
+//     });
+// }
 
-function removeUser(id) {
-    const userData = idToUsernameAndRoom(id);
-    const room = userData.room;
-    const username = userData.username;
-    rooms[room].users = rooms[room].users.filter(user => user !== username);
-    sockets = sockets.filter(socket => socket.id !== id);
-    return userData;
+function removeUser(username, room) {
+    redisClient.srem(`${room}_users`, username, function(err, reply) {
+        console.log("removed user from list");
+    });
 }
 
 function usersInRoom(room) {
-    return rooms[room].users;
+    const room_key = `${room}_users`;
+    redisClient.smembers(room_key, function(err, users) {
+        return users;
+    });
 }
 
 // functions regarding messages
@@ -63,44 +90,25 @@ function createMessage(username, text) {
     }
 }
 
-// set up socket io connection
-const io = require('socket.io')(server);
-
 io.on("connection", (socket) => {
-    socket.on("join", (data) => {
-        console.log("connected")
-        addUser({ id: socket.id, username: data.username, room: data.room })
+    const { username, room } = socket.handshake.query;
+    addUser({ username, room })
+    socket.join(room);
 
-        socket.join(data.room)
-        socket.to(data.room).emit("Alert", `${data.username} has joined!`);
-
-        io.to(data.room).emit("roomData", {
-            room: data.room,
-            users: usersInRoom(data.room)
-        })
-        console.log(rooms)
-        console.log(sockets)
+    io.to(room).emit("roomData", {
+        room: room,
+        users: usersInRoom(room)
     })
 
     socket.on("sendMessage", (message_txt) => {
-        console.log(message_txt);
-        const userData = idToUsernameAndRoom(socket.id);
-        const room = userData.room;
-        const username = userData.username;
-        io.to(room).emit("Message", createMessage(username, message_txt));
+            io.to(room).emit("Message", createMessage(username, message_txt));
     })
 
     socket.on("disconnect", () => {
-        const userData = removeUser(socket.id);
-        const room = userData.room;
-
-        console.log(rooms)
-        console.log(sockets)
-        if (userData) {
-            io.to(room).emit("roomData", {
-                room: room,
-                users: usersInRoom(room)
-            })
-        }
+        removeUser(socket.id);
+        io.to(room).emit("roomData", {
+            room: room,
+            users: usersInRoom(room)
+        })
     })
 })
