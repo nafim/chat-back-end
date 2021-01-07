@@ -21,8 +21,14 @@ function sendMessage() {
 
 
 socket.on('connect', function(){
-    
+
     sendMessage();
+});
+
+// if this happens connection is refused, need to manually reconnect again
+socket.on("connect_error", (err) => {
+    console.log(err instanceof Error); // true
+    console.log(err.message); // show the error message
 });
 
 socket.on('Message', function(data){

@@ -1,8 +1,9 @@
-GET: /api/getRoom
+POST: /api/sendVerificationEmail
     Parameters:
-        room: room name
+        email: email address
     Response:
-        array of objects with fields:
-            user,
-            message,
-            timestamp
+        json with fields:
+            success if successful, with status 200
+            error: "Invalid email" if email not valid, with status 400
+                Status 500 for all other errors 
+        email sent to email parameter
