@@ -7,3 +7,10 @@ POST: /api/sendVerificationEmail
             error: "Invalid email" if email not valid, with status 400
                 Status 500 for all other errors 
         email sent to email parameter
+
+GET: /api/getToken
+    Header:
+        Authorization: Bearer token
+    Response:
+        JSON fields:
+            token
