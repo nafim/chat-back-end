@@ -45,4 +45,4 @@ socket.on('Message', function(data){
 });
 socket.on('disconnect', function(){
     console.log("disconnected")
-}); 
+});

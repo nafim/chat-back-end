@@ -13,7 +13,7 @@ app.post('/sendVerificationEmail',
         const errors = validationResult(req);
         // valid email check
         if (errors.mapped().email) {
-            res.status(400).json({"error": 'Invalid email'})
+            res.status(200).json({"error": 'Invalid email'})
         } else {
             sendEmail(req.body.email, (err) => {
                 if (err) {
