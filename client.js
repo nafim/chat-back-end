@@ -1,6 +1,6 @@
 var socket = require('socket.io-client')('http://localhost:4000', {
     auth: {
-        token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzbnJhaG1hbjIwMTBAZ21haWwuY29tIiwiYXVkIjoiY2hhdC5uYWZpbXJhaG1hbi5jb20iLCJpYXQiOjE2MTAwNTQwMzcsImV4cCI6MTYxMjY0NjAzN30.m8b9UuMRfhGJWjDCpBaoduE6r1S2WvlxOPtaWusKhAE"
+        token: process.env.CLIENT_TOKEN
     },
     query: {
         "username": "a",

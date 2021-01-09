@@ -9,6 +9,19 @@ app.use(bodyParser.json());
 app.use(cors());
 app.use("/api", require('./api'));
 
+// error handler for api calls
+const notFoundHandler = (req, res, next) => {
+    return res.status(404).json({error: "Endpoint not found"});
+};
+
+const errorHandler = (err, req, res, next) => {
+    return res.status(500).json({error: "Something went wrong, please try again"});
+};
+
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+
 // import redis
 const redis = require('redis');
 redisClient = redis.createClient({
