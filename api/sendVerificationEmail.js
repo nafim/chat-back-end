@@ -5,6 +5,7 @@ const pug = require("pug");
 const nodemailer = require("nodemailer");
 const mg = require("nodemailer-mailgun-transport");
 const jwt = require('jsonwebtoken');
+const { validateRecaptcha } = require('../middlewares/recaptcha');
 
 // set email based rate limiter
 const rateLimit = require("express-rate-limit");
@@ -15,14 +16,23 @@ const apiLimiterUsingEmail = rateLimit({
         return req.body.email;
     },
     message:
-    "Too many verification calls for this email, please try again after half an hour"
+    "Too many attempts for this email, please try again after half an hour",
+    handler: function (req, res, ) {
+        res.status(200).send(options.message);
+    }
 });
 
 
 app.post('/sendVerificationEmail',
     apiLimiterUsingEmail,
     body('email').isEmail(),
+    validateRecaptcha,
     (req, res, next) => {
+        // recaptcha check
+        if (!req.recaptchaVerified) {
+            res.status(200).json({"error": 'Failed recaptcha check'})
+        }
+
         const errors = validationResult(req);
         // valid email check
         if (errors.mapped().email) {

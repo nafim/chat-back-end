@@ -7,6 +7,16 @@ const mongoose = require('mongoose');
 const User = require('../models/user');
 require('dotenv').config();
 
+/*
+************* Test for api endpoints of the chat back end *************
+Test getToken
+    partition on token: token valid, token not valid
+    partition on username of token: username already in database, username not already in database
+
+Test sendVerficationEmail
+    partition on email: email is valid, email invalid
+*/
+
 describe('getToken endpoint tests', () => {
     beforeAll(async () => {
         await mongoose.connect(global.__MONGO_URI__, { useNewUrlParser: true, useCreateIndex: true }, (err) => {
@@ -24,7 +34,8 @@ describe('getToken endpoint tests', () => {
     })
 
     it('getToken with valid token', async () => {
-        const testEmail = 'test@test.com';
+        console.log("uri", mongoServer.getUri())
+        const testEmail = 'test1@test.com';
         const oldToken = jwt.sign({
             sub: testEmail,
             aud: process.env.JWT_TOKEN_AUDIENCE},

@@ -40,7 +40,10 @@ const apiLimiterUsingIP = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour window
     max: 20, // start blocking after 20 requests
     message:
-    "Too many api calls from this IP address, please try again after an hour"
+    "Too many attempts from this IP address, please try again after an hour",
+    handler: function (req, res, ) {
+        res.status(200).send(options.message);
+    }
 });
 
 app.use(apiLimiterUsingIP);
