@@ -32,7 +32,7 @@ mongoose.connect(process.env.MONGODB_STRING, {
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function() {
-    console.log("we're connected!");
+    console.log("connected to mongodb");
 });
 
 // set up socket io connection

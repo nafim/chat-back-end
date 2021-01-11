@@ -6,8 +6,21 @@ const nodemailer = require("nodemailer");
 const mg = require("nodemailer-mailgun-transport");
 const jwt = require('jsonwebtoken');
 
+// set email based rate limiter
+const rateLimit = require("express-rate-limit");
+const apiLimiterUsingEmail = rateLimit({
+    windowMs: 30 * 60 * 1000, // 30 minute window
+    max: 5, // start blocking after 5 requests
+    keyGenerator: function (req) {
+        return req.body.email;
+    },
+    message:
+    "Too many verification calls for this email, please try again after half an hour"
+});
+
 
 app.post('/sendVerificationEmail',
+    apiLimiterUsingEmail,
     body('email').isEmail(),
     (req, res, next) => {
         const errors = validationResult(req);

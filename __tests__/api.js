@@ -1,11 +1,28 @@
 const supertest = require("supertest");
 const app = require('../app');
 const request = supertest(app);
+
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
+const User = require('../models/user');
 require('dotenv').config();
 
-
 describe('getToken endpoint tests', () => {
+    beforeAll(async () => {
+        await mongoose.connect(global.__MONGO_URI__, { useNewUrlParser: true, useCreateIndex: true }, (err) => {
+            if (err) {
+                console.error(err);
+                process.exit(1);
+            }
+        });
+    });
+
+    afterAll(done => {
+        // Closing mongoDB connection
+        mongoose.connection.close()
+        done()
+    })
+
     it('getToken with valid token', async () => {
         const testEmail = 'test@test.com';
         const oldToken = jwt.sign({
