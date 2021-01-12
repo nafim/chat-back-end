@@ -34,19 +34,6 @@ passport.use(new JwtStrategy(opts, function(jwt_payload, done) {
     });
 }));
 
-// import and set IP address based rate limiter
-const rateLimit = require("express-rate-limit");
-const apiLimiterUsingIP = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour window
-    max: 20, // start blocking after 20 requests
-    message:
-    "Too many attempts from this IP address, please try again after an hour",
-    handler: function (req, res, ) {
-        res.status(200).send(options.message);
-    }
-});
-
-app.use(apiLimiterUsingIP);
 app.use(require('./sendVerificationEmail'));
 app.use(require('./getToken'));
 
