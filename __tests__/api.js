@@ -1,5 +1,15 @@
-const supertest = require("supertest");
+// mock sentry
+const sentryHandlerMock = jest.fn((req, res, next) => {
+    return next();
+})
+jest.mock('@sentry/node');
+jest.mock('@sentry/tracing');
+const Sentry = require('@sentry/node');
+Sentry.Handlers.requestHandler.mockReturnValue(sentryHandlerMock);
+Sentry.Handlers.errorHandler.mockReturnValue(sentryHandlerMock);
 
+// import app
+const supertest = require("supertest");
 const app = require('../app');
 const request = supertest(app);
 

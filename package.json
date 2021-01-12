@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/nafim/chat-back-end#readme",
   "dependencies": {
+    "@sentry/node": "^5.29.2",
     "axios": "^0.21.1",
     "body-parser": "^1.19.0",
     "dotenv": "^8.2.0",

@@ -68,7 +68,9 @@ authenticateUser = (socket, next) => {
 authenticateGetJWT = (req, res, next) => {
     passport.authenticate('jwt', (err, user, info) => {
         if (err) return next(err);
-        if (!user) return res.status(200).json({"error": 'Invalid token'});
+        if (!user) {
+            res.status(200).json({"error": 'Invalid token'});
+        }
         req.user = user;
         return next();
     })(req, res, next);
