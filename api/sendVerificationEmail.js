@@ -78,7 +78,7 @@ function sendEmail(email, cb) {
     const mailOptions = {
         from: `admin@${process.env.EMAIL_DOMAIN}`,
         to: email,
-        subject: "Zoom Chat Email Verification",
+        subject: `${process.env.APP_NAME} Email Verification`,
         html: html
     };
     smtpTransport.sendMail(mailOptions, function (error, response) {
