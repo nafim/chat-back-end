@@ -2,7 +2,6 @@
 const chat = (io) => {
     io.on("connection", (socket) => {
         const { username, room } = socket.handshake.query;
-        console.log(`${username} has connected to room ${room}`);
 
         // add socket to the room and send an alert
         socket.join(room);
@@ -27,7 +26,6 @@ const chat = (io) => {
         })
 
         socket.on("disconnect", () => {
-            console.log(`${username} has disconnected`)
             socket.to(room).emit("LeaveAlert", {username});
             // save alert to message history
             const leaveAlert = createMessage("LeaveAlert", username, "User left");
@@ -55,7 +53,6 @@ const chat = (io) => {
             // parse json
             parsedHistory = history.map((data) => JSON.parse(data))
             io.to(socketID).emit("history", {history: parsedHistory, error: false});
-            console.log(parsedHistory);
         })
     }
 
@@ -76,7 +73,6 @@ const chat = (io) => {
         
         var numUsers = room.size;
         if (numUsers === undefined) throw Error('numUsers not defined.');
-        console.log('numUsers', numUsers);
         io.to(roomName).emit("roomData", {
             roomName,
             numUsers

@@ -27,19 +27,8 @@ app.use(cors());
 app.use("/api", require('./api'));
 
 // sentry error handler
-app.use( Sentry.Handlers.errorHandler({
-    shouldHandleError(error) {
-        // Capture all 200 and 500 errors
-        if (error.status === 200 || error.status === 500) {
-            return true;
-        }
-        return false;
-    },
-}));
+app.use( Sentry.Handlers.errorHandler());
 
-app.get("/debug-sentry", function mainHandler(req, res) {
-    throw new Error("My first Sentry error!");
-});
 
 // error handler for api calls
 const notFoundHandler = (req, res, next) => {

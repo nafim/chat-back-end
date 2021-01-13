@@ -6,6 +6,7 @@ const nodemailer = require("nodemailer");
 const mg = require("nodemailer-mailgun-transport");
 const jwt = require('jsonwebtoken');
 const validateRecaptcha = require('../middlewares/recaptcha');
+const Sentry = require('@sentry/node');
 
 //set IP address based rate limiter
 const rateLimit = require("express-rate-limit");
@@ -13,6 +14,10 @@ const apiLimiterUsingIP = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour window
     max: 30, // start blocking after 30 requests
     handler: function (req, res, next ) {
+        Sentry.captureMessage("IP based rate limit for email verification", {
+            level: "warning",
+            tags: { ip: req.ip}
+        });
         return res.status(200).json({ "error": "You have requested verification too many times in the last hour." });
     }
 });
@@ -25,6 +30,9 @@ const apiLimiterUsingEmail = rateLimit({
         return req.body.email;
     },
     handler: function (req, res, next ) {
+        Sentry.captureMessage("User based rate limit for email verification", {
+            level: "warning"
+        });
         return res.status(200).json({ "error": "You have requested verification for this email too many times within the last half hour." });
     }
 });
@@ -76,7 +84,7 @@ function sendEmail(email, cb) {
     const verificationLink = `${process.env.LANDINGPAGE}/verify?token=${token}`;
     const html = pug.renderFile("views/verificationEmail.pug", {verificationLink});
     const mailOptions = {
-        from: `admin@${process.env.EMAIL_DOMAIN}`,
+        from: process.env.EMAIL_SENDER,
         to: email,
         subject: `${process.env.APP_NAME} Email Verification`,
         html: html

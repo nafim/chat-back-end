@@ -9,6 +9,10 @@ const apiLimiterUsingIP = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour window
     max: 100, // start blocking after 100 requests
     handler: function (req, res, next ) {
+        Sentry.captureMessage("IP based rate limit for getToken", {
+            level: "warning",
+            tags: { ip: req.ip}
+        });
         return res.status(200).json({ "error": "You have requested verification too many times in the last hour." });
     }
 });
